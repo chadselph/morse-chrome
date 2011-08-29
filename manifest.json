@@ -1,0 +1,7 @@
+{
+  "name": "Morse Code Player",
+  "description": "Highlight text on a page and play the morse code!",
+  "version": "0.1",
+  "permissions": ["contextMenus"],
+  "background_page": "background.html"
+}
