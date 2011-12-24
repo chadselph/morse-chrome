@@ -1,0 +1,3 @@
+[submodule "beepjs"]
+	path = beepjs
+	url = git://github.com/chadselph/beepjs.git
