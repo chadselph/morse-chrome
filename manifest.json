@@ -1,10 +1,13 @@
 {
     "name": "Morse Chrome™",
+    "manifest_version": 2,
     "description": "Highlight text on a page and play the morse code!",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "permissions": ["contextMenus"],
     "options_page": "options.html",
-    "background_page": "background.html",
+    "background": {
+      "scripts": ["main.js", "menu.js"]
+    },
     "icons": {
         "16": "icons/icon16.png",
         "48": "icons/icon48.png",

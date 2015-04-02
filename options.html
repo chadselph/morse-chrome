@@ -1,66 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head><title>Morse Chrome Extension Options</title></head>
-<script src="beepjs/beep.js"></script>
-<script src="beepjs/examples/morse/morse.js"></script>
-<script type="text/javascript">
+<script src="main.js"></script>
+<script src="options.js"></script>
 
-// Saves options to localStorage.
-var wpm = null,
-    beep_freq = null;
-
-function save_options() {
-    wpm.save();
-    beep_freq.save();
-    var status = document.getElementById("status");
-    status.innerHTML = "Options Saved.";
-    setTimeout(function() {
-        status.innerHTML = "";
-    }, 750);
-}
-
-// Restores select box state to saved value from localStorage.
-function restore_options() {
-    wpm = new StoredOption("wpm", "wpm", value_updater("wpm_value"));
-    beep_freq = new StoredOption("freq", "beep_freq", value_updater("beep_value"));
-    wpm.load();
-    beep_freq.load();
-}
-
-function value_updater(id) {
-    var div = document.getElementById(id);
-    return function (value) {
-        div.innerHTML = value;
-    }
-}
-
-function StoredOption(id, storage_key, databinder) {
-    this.databinder = databinder;
-    this.element = document.getElementById(id);
-    this.element.onchange = function() {
-        databinder(this.value);
-    };
-    this.storage_key = storage_key;
-}
-StoredOption.prototype = {
-    save: function() {
-        localStorage[this.storage_key] = this.value();
-    },
-    load: function () {
-        this.element.value = localStorage[this.storage_key];
-        this.databinder(this.element.value); //initialize
-    },
-    value: function() {
-        return this.element.value;
-    }
-}
-function sample() {
-    encode("SOS", wpm.value(), beep_freq.value());
-}
-
-</script>
-
-<body onload="restore_options()">
+<body>
     <h1>Morse Chrome Settings</h1>
 
     Words Per Minute:
@@ -71,8 +15,8 @@ function sample() {
     <input type="range" id="freq" max="1600" min="500" value="750" step="10">
     <span id="beep_value"></span>
     <br>
-    <button onclick="sample()">Sample (SOS)</button>
-    <button onclick="save_options()">Save</button>
+    <button id="sample">Sample (SOS)</button>
+    <button id="save">Save</button>
     <div id="status"></div>
 </body>
 </html>
