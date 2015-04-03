@@ -2,7 +2,7 @@
     "name": "Morse Chrome™",
     "manifest_version": 2,
     "description": "Highlight text on a page and play the morse code!",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "permissions": ["contextMenus"],
     "options_page": "options.html",
     "background": {
