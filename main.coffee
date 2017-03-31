@@ -20,6 +20,8 @@ class MorseSequence
         @_gain.gain.setValueAtTime(1.0, @_cursor)
         @_cursor += time
         @_gain.gain.setValueAtTime(0.0, @_cursor)
+    end: () ->
+        @_oscilator.stop(@_cursor)
 
 
 
@@ -50,6 +52,8 @@ root.encode = (text, wpm=20, frequency=800) ->
     for sound in sounds
         sound()
         ms.sequence_silence(duration['element_gap'])
+    ms.end()
+
 
 
 make_table = (dit, dah, space, letter_end) ->
