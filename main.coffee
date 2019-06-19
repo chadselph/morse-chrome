@@ -96,7 +96,7 @@ make_table = (dit, dah, space, letter_end) ->
         8: [dah, dah, dah, dit, dit, letter_end]
         9: [dah, dah, dah, dah, dit, letter_end]
         0: [dah, dah, dah, dah, dah, letter_end]
-        ".": [dit, dah, dit, dah, dit, dit, dah, letter_end]
+        ".": [dit, dah, dit, dah, dit, dah, letter_end]
         ",": [dah, dah, dit, dit, dah, dah, letter_end]
         "?": [dit, dit, dah, dah, dit, dit, letter_end]
         "'": [dit, dah, dah, dah, dah, dit, letter_end]
