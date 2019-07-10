@@ -4,10 +4,12 @@ root = exports ? this
 # Saves options to localStorage.
 wpm = null
 beep_freq = null
+enable_popup = null
 
 save_options = ->
     wpm.save()
     beep_freq.save()
+    enable_popup.save()
     status = document.getElementById("status")
     status.innerHTML = "Options Saved."
     setTimeout(->
@@ -18,28 +20,34 @@ save_options = ->
 restore_options = ->
     wpm = new StoredOption("wpm", "wpm", value_updater("wpm_value"))
     beep_freq = new StoredOption("freq", "beep_freq", value_updater("beep_value"))
+    enable_popup = new StoredBoolean("popup", "popup")
     wpm.load()
     beep_freq.load()
+    enable_popup.load()
 
 value_updater = (id) ->
     div = document.getElementById(id)
     (value) -> div.innerHTML = value
 
 class StoredOption
-    constructor: (id, storage_key, databinder) ->
-        this.databinder = databinder
-        this.element = document.getElementById(id)
-        this.element.onchange = ->
-            databinder(this.value)
-        this.storage_key = storage_key
+    constructor: (id, @storage_key, @databinder) ->
+        @element = document.getElementById(id)
+        @element.onchange = =>
+            databinder(@value())
 
-    save: -> localStorage[this.storage_key] = this.value()
+    save: -> localStorage[@storage_key] = @value()
     load: ->
-        this.element.value = localStorage[this.storage_key]
-        this.databinder(this.element.value)  # initialize
-    value: -> return this.element.value
+        @element.value = localStorage[@storage_key]
+        @databinder(@value())  # initialize
+    value: -> @element.value
 
-sample = -> encode("SOS", wpm.value(), beep_freq.value())
+class StoredBoolean extends StoredOption
+    constructor: (id, storage_key) ->
+        super(id, storage_key, (value) -> )
+    value: -> @element.checked
+    load: -> @element.checked = localStorage[@storage_key] != "false"
+
+sample = -> encode("SOS", wpm.value(), beep_freq.value(), enable_popup.value())
 
 document.addEventListener("DOMContentLoaded", () ->
     restore_options()

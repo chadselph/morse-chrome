@@ -13,6 +13,8 @@ class MorseSequence
         @_gain.connect(audioCtx.destination)
         @_oscilator.frequency.value = frequency
         @_oscilator.start(0)
+        @_events = []
+        @_timer = window.setInterval(( => @process_event()), 50)
 
     sequence_silence: (time) ->
         @_cursor += time
@@ -22,7 +24,16 @@ class MorseSequence
         @_gain.gain.setValueAtTime(0.0, @_cursor)
     end: () ->
         @_oscilator.stop(@_cursor)
-
+        @sequence_event( => window.clearInterval(@_timer))
+    sequence_event: (cb) ->
+        @_events.push({cb: cb, at: @_cursor})
+    process_event: ->
+        if @_events.length != 0 && @_events[0].at <= audioCtx.currentTime
+            try
+                @_events[0].cb()
+            catch error
+                console.log error
+            @_events = @_events.splice(1)
 
 
 make_durations = (wpm) ->
@@ -34,7 +45,7 @@ make_durations = (wpm) ->
     long_gap: unit * 7
 
 
-root.encode = (text, wpm=20, frequency=800) ->
+root.encode = (text, wpm=20, frequency=800, popup=true) ->
     duration = make_durations(wpm)
     ms = new MorseSequence(frequency)
     text = text.toLowerCase().trim()
@@ -44,14 +55,30 @@ root.encode = (text, wpm=20, frequency=800) ->
     space = -> ms.sequence_silence(duration['long_gap'])
     letter_end = -> ms.sequence_silence(duration['short_gap'])
 
-    lookup = make_table dit, dah, space, letter_end
+    lookup_sound = make_table dit, dah, space, letter_end
+    lookup_symbols = make_table "•", "−", "", ""
     # lookup all the letters
-    characters = (lookup[ch] for ch in text when lookup[ch]?)
-    # flatten the list of [duration, callable]s
-    sounds = [].concat(characters...)
-    for sound in sounds
-        sound()
-        ms.sequence_silence(duration['element_gap'])
+    characters = ([ch, lookup_sound[ch], lookup_symbols[ch]] for ch in text when lookup_sound[ch]?)
+
+    if popup
+        popup = window.open("", "mywin2dow", "menubar=0,tittlebar=0,resizable=1,width=300,height=200,centerscreen=1")
+        popup.document.body.style = "font: 40pt verdana,geneva,sans-serif;text-align: center;vertical-align: middle"
+
+    for [ch, sounds, symbols] in characters
+        if popup
+            do(ch, symbols) ->
+                ms.sequence_event( ->
+                    console.log(ch)
+                    console.log(symbols)
+                    popup.document.body.innerText = ch + "\n" + symbols.join(" ")
+                )
+        for sound in sounds
+            sound()
+            ms.sequence_silence(duration['element_gap'])
+    ms.sequence_event( ->
+        if popup
+            popup.close()
+    )
     ms.end()
 
 

@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
-<head><title>Morse Chrome Extension Options</title></head>
+
+<head>
+    <title>Morse Chrome Extension Options</title>
+</head>
 <script src="main.js"></script>
 <script src="options.js"></script>
 
@@ -15,8 +18,12 @@
     <input type="range" id="freq" max="1600" min="500" value="750" step="10">
     <span id="beep_value"></span>
     <br>
+    Enable popup:
+    <input type="checkbox" id="popup" checked="checked">
+    <br>
     <button id="sample">Sample (SOS)</button>
     <button id="save">Save</button>
     <div id="status"></div>
 </body>
+
 </html>
