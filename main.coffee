@@ -45,7 +45,7 @@ make_durations = (wpm) ->
     long_gap: unit * 7
 
 
-root.encode = (text, wpm=20, frequency=800, popup=true) ->
+root.encode = (text, wpm=20, frequency=600, popup=true) ->
     duration = make_durations(wpm)
     ms = new MorseSequence(frequency)
     text = text.toLowerCase().trim()

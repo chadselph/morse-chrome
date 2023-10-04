@@ -18,8 +18,8 @@ save_options = ->
 
 # Restores select box state to saved value from localStorage.
 restore_options = ->
-    wpm = new StoredOption("wpm", "wpm", value_updater("wpm_value"))
-    beep_freq = new StoredOption("freq", "beep_freq", value_updater("beep_value"))
+    wpm = new StoredOption("wpm", "wpm", value_updater("wpm_value"), 20)
+    beep_freq = new StoredOption("freq", "beep_freq", value_updater("beep_value"), 600)
     enable_popup = new StoredBoolean("popup", "popup")
     wpm.load()
     beep_freq.load()
@@ -30,14 +30,14 @@ value_updater = (id) ->
     (value) -> div.innerHTML = value
 
 class StoredOption
-    constructor: (id, @storage_key, @databinder) ->
+    constructor: (id, @storage_key, @databinder, @default_value) ->
         @element = document.getElementById(id)
         @element.onchange = =>
-            databinder(@value())
+            @databinder(@value())
 
     save: -> localStorage[@storage_key] = @value()
     load: ->
-        @element.value = localStorage[@storage_key]
+        @element.value = localStorage[@storage_key] || @default_value
         @databinder(@value())  # initialize
     value: -> @element.value
 
