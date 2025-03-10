@@ -1,9 +1,12 @@
-root = exports ? this
+handleMessages = (data) =>
+    encode(data.selectionText)
 
-audioCtx = new AudioContext()
+chrome.runtime.onMessage.addListener(handleMessages);
+
 
 class MorseSequence
 
+    audioCtx = new window.AudioContext()
     constructor: (frequency, delay=0.5) ->
         @_gain = audioCtx.createGain()
         @._gain.gain.value = 0
@@ -45,7 +48,7 @@ make_durations = (wpm) ->
     long_gap: unit * 7
 
 
-root.encode = (text, wpm=20, frequency=600, popup=true) ->
+export encode = (text, wpm=20, frequency=600, popup=true) ->
     duration = make_durations(wpm)
     ms = new MorseSequence(frequency)
     text = text.toLowerCase().trim()
