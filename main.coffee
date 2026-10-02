@@ -1,23 +1,33 @@
-handleMessages = (data) =>
-    encode(data.selectionText)
+audioCtx = null
 
-chrome.runtime.onMessage.addListener(handleMessages);
+getAudioCtx = ->
+    audioCtx ?= new AudioContext()
+    audioCtx.resume() if audioCtx.state == "suspended"
+    audioCtx
+
+# Fire-and-forget broadcast. Having no listener (e.g. the popup is
+# disabled or already closed) is not an error we care about.
+broadcast = (message) ->
+    try
+        chrome.runtime.sendMessage(message)?.catch?(-> )
+    catch error
+        # extension context torn down mid-playback
 
 
 class MorseSequence
 
-    audioCtx = new window.AudioContext()
     constructor: (frequency, delay=0.5) ->
-        @_gain = audioCtx.createGain()
-        @._gain.gain.value = 0
-        @_cursor = audioCtx.currentTime + delay
-        @_oscilator = audioCtx.createOscillator()
+        @_ctx = getAudioCtx()
+        @_gain = @_ctx.createGain()
+        @_gain.gain.value = 0
+        @_cursor = @_ctx.currentTime + delay
+        @_oscilator = @_ctx.createOscillator()
         @_oscilator.connect(@_gain)
-        @_gain.connect(audioCtx.destination)
+        @_gain.connect(@_ctx.destination)
         @_oscilator.frequency.value = frequency
         @_oscilator.start(0)
         @_events = []
-        @_timer = window.setInterval(( => @process_event()), 50)
+        @_timer = setInterval(( => @process_event()), 50)
 
     sequence_silence: (time) ->
         @_cursor += time
@@ -27,11 +37,11 @@ class MorseSequence
         @_gain.gain.setValueAtTime(0.0, @_cursor)
     end: () ->
         @_oscilator.stop(@_cursor)
-        @sequence_event( => window.clearInterval(@_timer))
+        @sequence_event( => clearInterval(@_timer))
     sequence_event: (cb) ->
         @_events.push({cb: cb, at: @_cursor})
     process_event: ->
-        if @_events.length != 0 && @_events[0].at <= audioCtx.currentTime
+        while @_events.length != 0 && @_events[0].at <= @_ctx.currentTime
             try
                 @_events[0].cb()
             catch error
@@ -51,8 +61,7 @@ make_durations = (wpm) ->
 export encode = (text, wpm=20, frequency=600, popup=true) ->
     duration = make_durations(wpm)
     ms = new MorseSequence(frequency)
-    text = text.toLowerCase().trim()
-    text.replace /\s+/g, " "
+    text = text.toLowerCase().trim().replace(/\s+/g, " ")
     dit = -> ms.sequence_tone(duration['short_mark'])
     dah = -> ms.sequence_tone(duration['long_mark'])
     space = -> ms.sequence_silence(duration['long_gap'])
@@ -63,27 +72,21 @@ export encode = (text, wpm=20, frequency=600, popup=true) ->
     # lookup all the letters
     characters = ([ch, lookup_sound[ch], lookup_symbols[ch]] for ch in text when lookup_sound[ch]?)
 
-    if popup
-        popup = window.open("", "mywin2dow", "menubar=0,tittlebar=0,resizable=1,width=300,height=200,centerscreen=1")
-        popup.document.body.style = "font: 40pt verdana,geneva,sans-serif;text-align: center;vertical-align: middle"
-
     for [ch, sounds, symbols] in characters
         if popup
             do(ch, symbols) ->
                 ms.sequence_event( ->
-                    console.log(ch)
-                    console.log(symbols)
-                    popup.document.body.innerText = ch + "\n" + symbols.join(" ")
+                    broadcast({
+                        type: "morse-symbol"
+                        ch: ch
+                        symbols: (s for s in symbols when s).join(" ")
+                    })
                 )
         for sound in sounds
             sound()
             ms.sequence_silence(duration['element_gap'])
-    ms.sequence_event( ->
-        if popup
-            popup.close()
-    )
+    ms.sequence_event( -> broadcast({type: "morse-done"}))
     ms.end()
-
 
 
 make_table = (dit, dah, space, letter_end) ->

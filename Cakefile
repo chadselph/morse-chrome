@@ -1,12 +1,32 @@
-{exec} = require("child_process")
+{execSync} = require("child_process")
+fs = require("fs")
 
-FILES = ["icons", "background.html", "manifest.json", "options.html", "main.js", "options.js", "menu.js"]
+FILES = [
+    "icons"
+    "manifest.json"
+    "offscreen.html"
+    "options.html"
+    "popup.html"
+    "main.js"
+    "menu.js"
+    "offscreen.js"
+    "options.js"
+    "popup.js"
+    "popupwin.js"
+]
 
 task("chrome_dist", "Build the chrome extension to upload to Google", ->
-    exec("coffee -c *.coffee")
-    exec("zip -r chromedist.zip " + FILES.join(" "), (err, stdout, stderr) ->
-        console.log(stdout + stderr) if stdout or stderr
-        throw err if err
-    );
-    console.log("Running zip command...");
+    # Compile first and wait for it: the old async exec() let zip run
+    # against stale (or missing) .js files.
+    console.log("Compiling CoffeeScript...")
+    execSync("coffee -c *.coffee", {stdio: "inherit"})
+
+    missing = (f for f in FILES when not fs.existsSync(f))
+    if missing.length
+        throw new Error("Refusing to package, missing: " + missing.join(", "))
+
+    fs.rmSync("chromedist.zip", {force: true})
+    console.log("Zipping...")
+    execSync("zip -r chromedist.zip " + FILES.join(" "), {stdio: "inherit"})
+    console.log("Built chromedist.zip")
 )

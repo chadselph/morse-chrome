@@ -1,56 +1,53 @@
-root = exports ? this
+import {encode} from "./main.js"
+import {openPopup} from "./popupwin.js"
 
+# chrome.storage, not localStorage: the service worker needs to read
+# these settings and has no access to localStorage.
+DEFAULTS =
+    wpm: 20
+    beep_freq: 600
+    popup: true
 
-# Saves options to localStorage.
-wpm = null
-beep_freq = null
-enable_popup = null
+el = {}
+
+wpm = -> Number(el.wpm.value)
+beep_freq = -> Number(el.freq.value)
+popup_enabled = -> el.popup.checked
+
+update_labels = ->
+    document.getElementById("wpm_value").innerHTML = el.wpm.value
+    document.getElementById("beep_value").innerHTML = el.freq.value
+
+restore_options = ->
+    settings = await chrome.storage.local.get(DEFAULTS)
+    el.wpm.value = settings.wpm
+    el.freq.value = settings.beep_freq
+    el.popup.checked = settings.popup
+    update_labels()
 
 save_options = ->
-    wpm.save()
-    beep_freq.save()
-    enable_popup.save()
+    await chrome.storage.local.set({
+        wpm: wpm()
+        beep_freq: beep_freq()
+        popup: popup_enabled()
+    })
     status = document.getElementById("status")
     status.innerHTML = "Options Saved."
     setTimeout(->
         status.innerHTML = ""
     , 750)
 
-# Restores select box state to saved value from localStorage.
-restore_options = ->
-    wpm = new StoredOption("wpm", "wpm", value_updater("wpm_value"), 20)
-    beep_freq = new StoredOption("freq", "beep_freq", value_updater("beep_value"), 600)
-    enable_popup = new StoredBoolean("popup", "popup")
-    wpm.load()
-    beep_freq.load()
-    enable_popup.load()
+sample = ->
+    await openPopup() if popup_enabled()
+    encode("SOS", wpm(), beep_freq(), popup_enabled())
 
-value_updater = (id) ->
-    div = document.getElementById(id)
-    (value) -> div.innerHTML = value
-
-class StoredOption
-    constructor: (id, @storage_key, @databinder, @default_value) ->
-        @element = document.getElementById(id)
-        @element.onchange = =>
-            @databinder(@value())
-
-    save: -> localStorage[@storage_key] = @value()
-    load: ->
-        @element.value = localStorage[@storage_key] || @default_value
-        @databinder(@value())  # initialize
-    value: -> @element.value
-
-class StoredBoolean extends StoredOption
-    constructor: (id, storage_key) ->
-        super(id, storage_key, (value) -> )
-    value: -> @element.checked
-    load: -> @element.checked = localStorage[@storage_key] != "false"
-
-sample = -> encode("SOS", wpm.value(), beep_freq.value(), enable_popup.value())
-
-document.addEventListener("DOMContentLoaded", () ->
-    restore_options()
+document.addEventListener("DOMContentLoaded", ->
+    el.wpm = document.getElementById("wpm")
+    el.freq = document.getElementById("freq")
+    el.popup = document.getElementById("popup")
+    el.wpm.onchange = el.wpm.oninput = update_labels
+    el.freq.onchange = el.freq.oninput = update_labels
     document.getElementById("sample").onclick = sample
     document.getElementById("save").onclick = save_options
+    restore_options()
 )
